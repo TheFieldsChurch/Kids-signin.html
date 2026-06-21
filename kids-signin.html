@@ -774,34 +774,21 @@ function doSyncThenClear() {
   closeNewWeekModal();
   showToast('Syncing to Google Sheets...');
 
-  // Submit via hidden form - most reliable method from local HTML files on iOS Safari
-  var encoded = encodeURIComponent(JSON.stringify(payload));
-  var iframe = document.getElementById('syncFrame');
-  if (!iframe) {
-    iframe = document.createElement('iframe');
-    iframe.id = 'syncFrame';
-    iframe.name = 'syncFrame';
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-  }
-  var form = document.createElement('form');
-  form.method = 'POST';
-  form.action = url;
-  form.target = 'syncFrame';
-  var input = document.createElement('input');
-  input.type = 'hidden';
-  input.name = 'payload';
-  input.value = JSON.stringify(payload);
-  form.appendChild(input);
-  document.body.appendChild(form);
-  form.submit();
-  document.body.removeChild(form);
-  // Clear and confirm immediately - we can't read the iframe response cross-origin
-  setTimeout(function() {
-    today = []; saveToday();
-    renderQuick(); updateHeader();
-    showToast('Sent to Google Sheets! List cleared.');
-  }, 1500);
+  // Use XMLHttpRequest which works reliably from GitHub Pages to Google Apps Script
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', url, true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      today = []; saveToday();
+      renderQuick(); updateHeader();
+      showToast('Synced to Google Sheets! List cleared.');
+    }
+  };
+  xhr.onerror = function() {
+    showToast('Failed to connect. Check your URL in Settings.');
+  };
+  xhr.send('payload=' + encodeURIComponent(JSON.stringify(payload)));
 }
 
 // Placeholder colour for age selects
