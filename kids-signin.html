@@ -774,21 +774,60 @@ function doSyncThenClear() {
   closeNewWeekModal();
   showToast('Syncing to Google Sheets...');
 
-  // Use XMLHttpRequest which works reliably from GitHub Pages to Google Apps Script
+  // Use XMLHttpRequest POST to Google Apps Script
   var xhr = new XMLHttpRequest();
   xhr.open('POST', url, true);
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4) {
-      today = []; saveToday();
-      renderQuick(); updateHeader();
-      showToast('Synced to Google Sheets! List cleared.');
+      if (xhr.status === 0 || xhr.status === 200) {
+        // Try to read response
+        var msg = '';
+        try {
+          var res = JSON.parse(xhr.responseText);
+          msg = res.message || '';
+        } catch(e) {
+          msg = xhr.responseText ? xhr.responseText.substring(0,100) : 'No response body';
+        }
+        if (xhr.status === 0) {
+          // Status 0 means the request was blocked (CORS) - try GET fallback
+          alert('POST was blocked. Trying GET method instead...');
+          syncViaGet(url, payload);
+        } else {
+          today = []; saveToday();
+          renderQuick(); updateHeader();
+          showToast('Synced! List cleared.');
+        }
+      } else {
+        alert('Sync error - Status: ' + xhr.status + ' Response: ' + xhr.responseText.substring(0,200));
+      }
     }
   };
   xhr.onerror = function() {
-    showToast('Failed to connect. Check your URL in Settings.');
+    alert('Connection error. Trying GET method...');
+    syncViaGet(url, payload);
   };
   xhr.send('payload=' + encodeURIComponent(JSON.stringify(payload)));
+}
+
+function syncViaGet(url, payload) {
+  var img = new Image();
+  var getUrl = url + '?payload=' + encodeURIComponent(JSON.stringify(payload));
+  img.onload = img.onerror = function() {
+    today = []; saveToday();
+    renderQuick(); updateHeader();
+    showToast('Synced via GET! List cleared.');
+  };
+  img.src = getUrl;
+  // Also try fetch as final fallback
+  if (window.fetch) {
+    fetch(getUrl, {mode:'no-cors'})
+      .then(function() {
+        today = []; saveToday();
+        renderQuick(); updateHeader();
+        showToast('Synced! List cleared.');
+      }).catch(function(){});
+  }
 }
 
 // Placeholder colour for age selects
