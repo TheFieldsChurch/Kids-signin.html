@@ -210,7 +210,7 @@ header{background:#5C3D4E;color:#FFFFFF;padding:14px 20px;flex-shrink:0;}
     </div>
   </div>
   <div class="bottom-btns">
-    <button class="btn-full btn-labels" onclick="openLabelModal()">&#127991; Print Name Tag Labels</button>
+    <button class="btn-full btn-labels" onclick="openLabelModal()">&#127991; Print Name Tags</button>
     <button class="btn-full btn-upload" onclick="openNewWeekModal()">&#128196; Upload to Google Sheets</button>
   </div>
 </div>
@@ -312,12 +312,12 @@ header{background:#5C3D4E;color:#FFFFFF;padding:14px 20px;flex-shrink:0;}
 <!-- LABEL MODAL -->
 <div class="modal-overlay" id="labelModal">
   <div class="modal-box">
-    <h2>Print Name Tag Labels</h2>
-    <p class="modal-sub">Tap to select or deselect. Children currently signed in are pre-selected.</p>
+    <h2>Print Name Tags</h2>
+    <p class="modal-sub">Tap to select or deselect. All signed-in children are pre-selected.</p>
     <div class="label-grid" id="labelGrid"></div>
-    <div class="modal-actions">
+    <div class="modal-actions" style="position:sticky;bottom:0;background:var(--white);padding-top:12px;">
       <button class="btn-m btn-m-cancel" onclick="closeLabelModal()">Cancel</button>
-      <button class="btn-m btn-m-blue"   onclick="printLabels()">Print Selected</button>
+      <button class="btn-m btn-m-blue"   onclick="printLabels()">Print Name Tags</button>
     </div>
   </div>
 </div>
@@ -781,19 +781,18 @@ function setUrlStatus(msg, colour) {
 
 /* LABELS */
 function openLabelModal() {
-  var present = signedIn.filter(function(c){ return c.status === 'in'; });
-  if (!present.length){ alert('No children are currently signed in.'); return; }
+  if (!signedIn.length){ alert('No children are signed in today.'); return; }
   var grid = document.getElementById('labelGrid');
-  grid.innerHTML = present.map(function(c, i){
+  grid.innerHTML = signedIn.map(function(c, i){
     var age = c.dob ? calcAge(c.dob) : (c.age || '');
-    return '<div class="lp selected" id="lp-' + i + '" onclick="this.classList.toggle(\'selected\')">'
+    return '<div class="lp' + (c.status === 'in' ? ' selected' : '') + '" id="lp-' + i + '" onclick="this.classList.toggle(\'selected\')">'
       + '<div class="lp-name">' + esc(c.name) + '</div>'
       + '<div class="lp-detail">' + (age ? 'Age ' + age : '') + (age && c.guardian ? ' - ' : '') + esc(c.guardian) + '</div>'
       + '<div class="lp-church">The Fields Church</div>'
     + '</div>';
   }).join('');
   document.getElementById('labelModal').classList.add('open');
-  document.getElementById('labelModal').dataset.present = JSON.stringify(present);
+  document.getElementById('labelModal').dataset.present = JSON.stringify(signedIn);
 }
 function closeLabelModal(){ document.getElementById('labelModal').classList.remove('open'); }
 function printLabels() {
