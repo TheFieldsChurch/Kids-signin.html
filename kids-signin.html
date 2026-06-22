@@ -579,11 +579,19 @@ function quickSignIn(regId) {
   for (var i = 0; i < registry.length; i++){ if (registry[i].id === regId){ child = registry[i]; break; } }
   if (!child) return;
   for (var j = 0; j < signedIn.length; j++){ if (signedIn[j].registryId === regId){ showToast(child.name + ' is already signed in.'); return; } }
+  if (needsUpdate(child)) { openUpdatePrompt(child); return; }
+  doQuickSignIn(regId);
+}
+
+function doQuickSignIn(regId) {
+  var child = null;
+  for (var i = 0; i < registry.length; i++){ if (registry[i].id === regId){ child = registry[i]; break; } }
+  if (!child) return;
   showToast('Signing in ' + child.name + '...');
   var age = child.dob ? calcAge(child.dob) : (child.age || '');
-  api({action:'signIn', registryId:regId, name:child.name, dob:child.dob||'', age:age, guardian:child.guardian, contact:child.contact}, function(err, res){
+  api({action:'signIn', registryId:regId, name:child.name, dob:child.dob||'', age:age, guardian:child.guardian, contact:child.contact, medical:child.medical||''}, function(err, res){
     if (err || !res.success) { showToast('Error: ' + (err || res.message)); return; }
-    signedIn.push({registryId:regId, name:child.name, dob:child.dob||'', age:age, guardian:child.guardian, contact:child.contact, timeIn:res.timeIn, timeOut:'', status:'in'});
+    signedIn.push({registryId:regId, name:child.name, dob:child.dob||'', age:age, guardian:child.guardian, contact:child.contact, medical:child.medical||'', timeIn:res.timeIn, timeOut:'', status:'in'});
     showToast(child.name + ' signed in!');
     renderQuick();
   });
