@@ -383,7 +383,8 @@ function renderQuick() {
     scroll.innerHTML = '<div class="empty-state"><div class="icon">&#128075;</div><p>No children registered yet.<br>Use <strong>First visit? Sign in here</strong> below.</p></div>';
     updateHeader(); return;
   }
-  var sorted = registry.slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+  function surname(n){ var p = n.trim().split(' '); return p[p.length-1]; }
+  var sorted = registry.slice().sort(function(a,b){ return surname(a.name).localeCompare(surname(b.name)); });
   var inList = [], waitList = [], outList = [];
   sorted.forEach(function(child){
     var entry = null;
@@ -508,7 +509,8 @@ function renderRegister() {
       + '<p>No children registered yet.<br>They appear here after their first sign-in.</p></div>';
     return;
   }
-  var sorted = registry.slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+  function surnameReg(n){ var p = n.trim().split(' '); return p[p.length-1]; }
+  var sorted = registry.slice().sort(function(a,b){ return surnameReg(a.name).localeCompare(surnameReg(b.name)); });
   list.innerHTML = sorted.map(function(c){
     return '<div class="reg-item">'
       + '<div><div class="ri-name">' + esc(c.name) + '</div>'
