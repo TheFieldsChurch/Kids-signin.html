@@ -290,12 +290,8 @@
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>Age *</label>
-        <select id="m-age">
-          <option value="">Select age</option>
-          <option>12</option><option>13</option><option>14</option>
-          <option>15</option><option>16</option><option>17</option>
-        </select>
+        <label>Date of Birth *</label>
+        <input type="date" id="m-dob" max="">
       </div>
       <div class="form-group">
         <label>Year Group</label>
@@ -338,7 +334,7 @@
 
 <script>
 // ─── STATE ───────────────────────────────────────────────────────────────────
-var register = [];   // [{id, first, last, age, year, guardian, contact}]
+var register = [];   // [{id, first, last, dob, year, guardian, contact}]
 var today    = [];   // [id, id, …]  — IDs of those present
 var editId   = null; // currently editing
 
@@ -350,6 +346,8 @@ window.addEventListener('DOMContentLoaded', function () {
   renderRegister();
   loadSettings();
   document.getElementById('header-date').textContent = formatDate(new Date());
+  // Set max date on DOB field to today
+  document.getElementById('m-dob').max = new Date().toISOString().split('T')[0];
 });
 
 // ─── STORAGE ─────────────────────────────────────────────────────────────────
@@ -399,7 +397,7 @@ function renderSignIn() {
       return '<div class="person-card' + (present ? ' present' : '') + '" onclick="togglePresent(\'' + p.id + '\')">' +
         '<div class="pname">' + p.first + '</div>' +
         '<div class="pname" style="font-size:0.82rem; font-weight:600; color:var(--muted);">' + p.last + '</div>' +
-        '<div class="psub">Age ' + p.age + (p.year ? ' · ' + p.year : '') + '</div>' +
+        '<div class="psub">Age ' + calcAge(p.dob) + (p.year ? ' · ' + p.year : '') + '</div>' +
         (present ? '<div class="pbadge">✓ Present</div>' : '') +
       '</div>';
     }).join('');
@@ -420,7 +418,7 @@ function renderRegister() {
     return '<div class="register-row">' +
       '<div class="register-info">' +
         '<div class="rname">' + p.last + ', ' + p.first + '</div>' +
-        '<div class="rsub">Age ' + p.age + (p.year ? ' · ' + p.year : '') + ' · ' + p.guardian + ' · ' + p.contact + '</div>' +
+        '<div class="rsub">Age ' + calcAge(p.dob) + (p.year ? ' · ' + p.year : '') + ' · DOB ' + formatDob(p.dob) + ' · ' + p.guardian + ' · ' + p.contact + '</div>' +
       '</div>' +
       '<div class="register-actions">' +
         '<button class="btn btn-outline btn-sm" onclick="openEditModal(\'' + p.id + '\')">Edit</button>' +
@@ -461,7 +459,7 @@ function openAddModal() {
   document.getElementById('modal-title').textContent = 'Add New Person';
   document.getElementById('m-first').value    = '';
   document.getElementById('m-last').value     = '';
-  document.getElementById('m-age').value      = '';
+  document.getElementById('m-dob').value      = '';
   document.getElementById('m-year').value     = '';
   document.getElementById('m-guardian').value = '';
   document.getElementById('m-contact').value  = '';
@@ -475,7 +473,7 @@ function openEditModal(id) {
   document.getElementById('modal-title').textContent = 'Edit ' + p.first + ' ' + p.last;
   document.getElementById('m-first').value    = p.first;
   document.getElementById('m-last').value     = p.last;
-  document.getElementById('m-age').value      = p.age;
+  document.getElementById('m-dob').value      = p.dob || '';
   document.getElementById('m-year').value     = p.year || '';
   document.getElementById('m-guardian').value = p.guardian;
   document.getElementById('m-contact').value  = p.contact;
@@ -490,20 +488,20 @@ function closeModalOnOverlay(e) {
 function saveModal() {
   var first    = document.getElementById('m-first').value.trim();
   var last     = document.getElementById('m-last').value.trim();
-  var age      = document.getElementById('m-age').value;
+  var dob      = document.getElementById('m-dob').value;
   var year     = document.getElementById('m-year').value;
   var guardian = document.getElementById('m-guardian').value.trim();
   var contact  = document.getElementById('m-contact').value.trim();
 
-  if (!first || !last || !age || !guardian || !contact) {
+  if (!first || !last || !dob || !guardian || !contact) {
     showToast('Please fill in all required fields'); return;
   }
   if (editId) {
     var p = register.find(function(x){ return x.id === editId; });
-    if (p) { p.first = first; p.last = last; p.age = age; p.year = year; p.guardian = guardian; p.contact = contact; }
+    if (p) { p.first = first; p.last = last; p.dob = dob; p.year = year; p.guardian = guardian; p.contact = contact; }
     showToast('Updated ✓');
   } else {
-    register.push({ id: 'p' + Date.now(), first: first, last: last, age: age, year: year, guardian: guardian, contact: contact });
+    register.push({ id: 'p' + Date.now(), first: first, last: last, dob: dob, year: year, guardian: guardian, contact: contact });
     showToast(first + ' ' + last + ' added ✓');
   }
   saveLocal();
@@ -563,7 +561,7 @@ function doNewWeek() {
     group: '101st',
     people: register.map(function(p){
       return {
-        id: p.id, first: p.first, last: p.last, age: p.age,
+        id: p.id, first: p.first, last: p.last, dob: p.dob, age: calcAge(p.dob),
         year: p.year || '', guardian: p.guardian, contact: p.contact,
         present: today.includes(p.id) ? 'Yes' : 'No'  // today already cleared, so all No — use saved list
       };
@@ -627,7 +625,7 @@ function printLabels() {
   area.innerHTML = presentPeople.map(function(p){
     return '<div class="label-item">' +
       '<div class="ln">' + p.first + ' ' + p.last + '</div>' +
-      '<div class="ls">Age ' + p.age + (p.year ? ' · ' + p.year : '') + '</div>' +
+      '<div class="ls">Age ' + calcAge(p.dob) + (p.year ? ' · ' + p.year : '') + '</div>' +
       '<div class="lc">Guardian: ' + p.guardian + '</div>' +
     '</div>';
   }).join('');
@@ -671,6 +669,25 @@ function formatDate(d) {
   var mm = String(d.getMonth()+1).padStart(2,'0');
   var yy = d.getFullYear();
   return dd + '/' + mm + '/' + yy;
+}
+
+// Calculate age in whole years from a DOB string (YYYY-MM-DD)
+function calcAge(dob) {
+  if (!dob) return '?';
+  var today = new Date();
+  var birth = new Date(dob);
+  var age = today.getFullYear() - birth.getFullYear();
+  var m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+// Format DOB for display: DD/MM/YYYY
+function formatDob(dob) {
+  if (!dob) return '';
+  var parts = dob.split('-');
+  if (parts.length !== 3) return dob;
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
 }
 </script>
 </body>
