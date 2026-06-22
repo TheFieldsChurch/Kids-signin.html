@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>101st Sign-In · The Fields Church</title>
+<style>
+  :root {
+    --primary: #1a3a5c;
+    --primary-light: #2a5298;
+    --accent: #e8a020;
+    --accent-light: #ffc947;
+    --success: #2e7d32;
+    --danger: #c62828;
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --muted: #666;
+    --border: #dde1e7;
+    --present-bg: #e8f5e9;
+    --present-border: #66bb6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  #app-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    padding: 14px 16px 10px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  #app-header h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: 0.5px; }
+  #header-sub { font-size: 0.78rem; opacity: 0.85; margin-top: 2px; }
+
+  /* TABS */
+  #tabs {
+    display: flex; background: var(--primary);
+    border-top: 1px solid rgba(255,255,255,0.15);
+  }
+  .tab-btn {
+    flex: 1; padding: 10px 4px; font-size: 0.8rem; font-weight: 600;
+    color: rgba(255,255,255,0.65); border: none; background: none; cursor: pointer;
+    border-bottom: 3px solid transparent; transition: all 0.2s;
+  }
+  .tab-btn.active { color: white; border-bottom-color: var(--accent-light); }
+
+  /* PANELS */
+  .panel { display: none; padding: 16px; max-width: 700px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: var(--primary); }
+
+  /* YOUNG PERSON CARDS */
+  .person-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .person-card {
+    background: var(--card); border: 2px solid var(--border); border-radius: 10px;
+    padding: 12px 10px; text-align: center; cursor: pointer;
+    transition: all 0.18s; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .person-card:active { transform: scale(0.95); }
+  .person-card.present { background: var(--present-bg); border-color: var(--present-border); }
+  .person-card .pname { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+  .person-card .psub { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
+  .person-card .pbadge {
+    display: inline-block; margin-top: 6px; font-size: 0.7rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    background: #c8e6c9; color: var(--success);
+  }
+  .person-card.present .pbadge { background: #c8e6c9; color: var(--success); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 11px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+    border: none; cursor: pointer; transition: all 0.18s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--primary-light); color: white; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-accent { background: var(--accent); color: white; }
+  .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); }
+  .btn-sm { padding: 7px 14px; font-size: 0.8rem; }
+  .btn-full { width: 100%; margin-bottom: 10px; }
+
+  /* FORMS */
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: var(--text); }
+  .form-group input, .form-group select {
+    width: 100%; padding: 11px 13px; border: 2px solid var(--border); border-radius: 8px;
+    font-size: 1rem; color: var(--text); background: white;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none; border-color: var(--primary-light);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* SEARCH */
+  #search-wrap { position: relative; margin-bottom: 14px; }
+  #search-input {
+    width: 100%; padding: 11px 13px 11px 38px; border: 2px solid var(--border);
+    border-radius: 8px; font-size: 1rem;
+  }
+  #search-input:focus { outline: none; border-color: var(--primary-light); }
+  #search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 1rem; color: var(--muted); pointer-events: none; }
+
+  /* COUNTER STRIP */
+  #counter-strip {
+    background: var(--primary); color: white; border-radius: 10px;
+    padding: 10px 16px; margin-bottom: 14px;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  }
+  #counter-strip span { font-size: 0.85rem; }
+  #counter-strip strong { font-size: 1.15rem; }
+
+  /* REGISTER LIST */
+  .register-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .register-row:last-child { border-bottom: none; }
+  .register-info .rname { font-weight: 700; font-size: 0.95rem; }
+  .register-info .rsub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .register-actions { display: flex; gap: 6px; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #222; color: white; padding: 12px 22px; border-radius: 30px;
+    font-size: 0.9rem; font-weight: 600; z-index: 999;
+    transition: transform 0.3s ease; white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* MODAL */
+  #modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 200; align-items: center; justify-content: center; padding: 16px;
+  }
+  #modal-overlay.open { display: flex; }
+  #modal-box {
+    background: white; border-radius: 14px; padding: 22px; width: 100%; max-width: 420px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+  }
+  #modal-box h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; color: var(--primary); }
+
+  /* SETTINGS */
+  .settings-label { font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text); display: block; }
+  .settings-input {
+    width: 100%; padding: 11px 13px; border: 2px solid var(--border); border-radius: 8px;
+    font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .settings-input:focus { outline: none; border-color: var(--primary-light); }
+  .settings-status { font-size: 0.8rem; margin-top: 4px; }
+  .settings-status.ok { color: var(--success); }
+  .settings-status.err { color: var(--danger); }
+
+  /* NEW WEEK SECTION */
+  .new-week-box {
+    border: 2px dashed var(--accent); border-radius: 10px; padding: 16px; margin-top: 8px;
+    background: #fffdf4;
+  }
+  .new-week-box p { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* LABEL PRINT */
+  @media print {
+    body > *:not(#print-area) { display: none !important; }
+    #print-area { display: block !important; }
+    .label-page { page-break-after: always; }
+  }
+  #print-area { display: none; }
+  .label-item {
+    border: 2px solid #333; border-radius: 8px; padding: 14px 16px;
+    display: inline-block; margin: 6px; min-width: 200px; font-family: Arial, sans-serif;
+  }
+  .label-item .ln { font-size: 1.4rem; font-weight: 900; }
+  .label-item .ls { font-size: 0.85rem; color: #555; margin-top: 2px; }
+  .label-item .lc { font-size: 0.8rem; color: #333; margin-top: 6px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<div id="app-header">
+  <h1>🎯 101st Sign-In</h1>
+  <div id="header-sub">The Fields Church &nbsp;·&nbsp; <span id="header-date"></span> &nbsp;·&nbsp; <span id="header-count">0 present</span></div>
+</div>
+
+<div id="tabs">
+  <button class="tab-btn active" onclick="showTab('signin')">✅ Sign In</button>
+  <button class="tab-btn" onclick="showTab('register')">📋 Register</button>
+  <button class="tab-btn" onclick="showTab('settings')">⚙️ Settings</button>
+</div>
+
+<!-- SIGN IN TAB -->
+<div id="tab-signin" class="panel active">
+  <div id="counter-strip">
+    <div><span>Present today</span><br><strong id="count-present">0</strong></div>
+    <div><span>Registered</span><br><strong id="count-total">0</strong></div>
+    <div>
+      <button class="btn btn-accent btn-sm" onclick="openAddModal()">+ New Person</button>
+    </div>
+  </div>
+
+  <div id="search-wrap">
+    <span id="search-icon">🔍</span>
+    <input type="text" id="search-input" placeholder="Search by name…" oninput="renderSignIn()">
+  </div>
+
+  <div id="person-grid" class="person-grid"></div>
+  <div id="signin-empty" class="empty-state" style="display:none">
+    <div class="icon">👥</div>
+    <p>No one registered yet.<br>Tap <strong>+ New Person</strong> to add someone.</p>
+  </div>
+</div>
+
+<!-- REGISTER TAB -->
+<div id="tab-register" class="panel">
+  <div class="card">
+    <h2>📋 Full Register</h2>
+    <div id="register-list"></div>
+    <div id="register-empty" class="empty-state" style="display:none">
+      <div class="icon">📋</div>
+      <p>No one registered yet.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS TAB -->
+<div id="tab-settings" class="panel">
+  <div class="card">
+    <h2>🔗 Google Sheets Connection</h2>
+    <label class="settings-label">Google Apps Script URL</label>
+    <input type="url" id="sheets-url" class="settings-input" placeholder="https://script.google.com/macros/s/…/exec">
+    <button class="btn btn-primary btn-sm" onclick="saveSheetUrl()">Save URL</button>
+    <p id="url-status" class="settings-status"></p>
+  </div>
+
+  <div class="card">
+    <h2>🗓️ New Week</h2>
+    <div class="new-week-box">
+      <p>At the end of each Sunday, sync attendance to Google Sheets and clear the sign-in list ready for next week. Any young people still marked as present will be signed out first.</p>
+      <button class="btn btn-success btn-full" onclick="confirmNewWeek()">📤 Sync to Google Sheets + Clear</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🖨️ Print Labels</h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Print name labels for everyone currently signed in.</p>
+    <button class="btn btn-outline btn-sm" onclick="printLabels()">🖨️ Print Today's Labels</button>
+  </div>
+
+  <div class="card">
+    <h2>☁️ Sync Register</h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Load the register from Google Sheets (use when switching devices).</p>
+    <button class="btn btn-outline btn-sm" onclick="loadFromSheets()">⬇️ Load Register from Sheets</button>
+    <p id="load-status" class="settings-status"></p>
+  </div>
+
+  <div class="card" style="border: 2px solid #ffcdd2;">
+    <h2 style="color:var(--danger);">⚠️ Danger Zone</h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Clear all local data. This cannot be undone.</p>
+    <button class="btn btn-danger btn-sm" onclick="confirmClearAll()">🗑️ Clear All Data</button>
+  </div>
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div id="modal-overlay" onclick="closeModalOnOverlay(event)">
+  <div id="modal-box">
+    <h3 id="modal-title">Add New Person</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>First Name *</label>
+        <input type="text" id="m-first" placeholder="First name">
+      </div>
+      <div class="form-group">
+        <label>Last Name *</label>
+        <input type="text" id="m-last" placeholder="Last name">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Age *</label>
+        <select id="m-age">
+          <option value="">Select age</option>
+          <option>12</option><option>13</option><option>14</option>
+          <option>15</option><option>16</option><option>17</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Year Group</label>
+        <select id="m-year">
+          <option value="">Optional</option>
+          <option>Year 7</option><option>Year 8</option><option>Year 9</option>
+          <option>Year 10</option><option>Year 11</option><option>Year 12</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Parent / Guardian *</label>
+      <input type="text" id="m-guardian" placeholder="Parent or guardian name">
+    </div>
+    <div class="form-group">
+      <label>Contact Number *</label>
+      <input type="tel" id="m-contact" placeholder="04xx xxx xxx">
+    </div>
+    <div style="display:flex; gap:10px; margin-top:4px;">
+      <button class="btn btn-primary" style="flex:1" onclick="saveModal()">Save</button>
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirm-overlay" onclick="closeConfirmOnOverlay(event)" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:300; align-items:center; justify-content:center; padding:16px;">
+  <div id="confirm-box" style="background:white; border-radius:14px; padding:22px; width:100%; max-width:380px; box-shadow:0 8px 30px rgba(0,0,0,0.25);">
+    <h3 id="confirm-title" style="font-size:1.05rem; font-weight:700; margin-bottom:10px; color:var(--primary);"></h3>
+    <p id="confirm-msg" style="font-size:0.88rem; color:var(--muted); margin-bottom:18px; line-height:1.5;"></p>
+    <div style="display:flex; gap:10px;">
+      <button id="confirm-yes" class="btn btn-danger" style="flex:1">Confirm</button>
+      <button class="btn btn-outline" style="flex:1" onclick="closeConfirm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="print-area"></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+var register = [];   // [{id, first, last, age, year, guardian, contact}]
+var today    = [];   // [id, id, …]  — IDs of those present
+var editId   = null; // currently editing
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', function () {
+  loadLocal();
+  updateHeader();
+  renderSignIn();
+  renderRegister();
+  loadSettings();
+  document.getElementById('header-date').textContent = formatDate(new Date());
+});
+
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+function saveLocal() {
+  localStorage.setItem('101st_register', JSON.stringify(register));
+  localStorage.setItem('101st_today', JSON.stringify(today));
+}
+function loadLocal() {
+  try { register = JSON.parse(localStorage.getItem('101st_register')) || []; } catch(e) { register = []; }
+  try { today    = JSON.parse(localStorage.getItem('101st_today'))    || []; } catch(e) { today = []; }
+}
+function loadSettings() {
+  var url = localStorage.getItem('101st_sheets_url') || '';
+  document.getElementById('sheets-url').value = url;
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + name).classList.add('active');
+  var btns = document.querySelectorAll('.tab-btn');
+  var names = ['signin','register','settings'];
+  btns[names.indexOf(name)].classList.add('active');
+  if (name === 'register') renderRegister();
+}
+
+// ─── RENDER SIGN-IN ───────────────────────────────────────────────────────────
+function renderSignIn() {
+  var q = document.getElementById('search-input').value.toLowerCase().trim();
+  var grid = document.getElementById('person-grid');
+  var empty = document.getElementById('signin-empty');
+
+  var sorted = register.slice().sort(function(a,b){
+    return (a.last + a.first).toLowerCase().localeCompare((b.last + b.first).toLowerCase());
+  });
+  var filtered = q ? sorted.filter(function(p){
+    return (p.first + ' ' + p.last).toLowerCase().includes(q);
+  }) : sorted;
+
+  if (register.length === 0) {
+    grid.innerHTML = ''; grid.style.display = 'none'; empty.style.display = 'block';
+  } else {
+    grid.style.display = 'grid'; empty.style.display = 'none';
+    grid.innerHTML = filtered.map(function(p){
+      var present = today.includes(p.id);
+      return '<div class="person-card' + (present ? ' present' : '') + '" onclick="togglePresent(\'' + p.id + '\')">' +
+        '<div class="pname">' + p.first + '</div>' +
+        '<div class="pname" style="font-size:0.82rem; font-weight:600; color:var(--muted);">' + p.last + '</div>' +
+        '<div class="psub">Age ' + p.age + (p.year ? ' · ' + p.year : '') + '</div>' +
+        (present ? '<div class="pbadge">✓ Present</div>' : '') +
+      '</div>';
+    }).join('');
+  }
+  updateCounts();
+}
+
+// ─── RENDER REGISTER ─────────────────────────────────────────────────────────
+function renderRegister() {
+  var list = document.getElementById('register-list');
+  var empty = document.getElementById('register-empty');
+  if (register.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  var sorted = register.slice().sort(function(a,b){
+    return (a.last + a.first).toLowerCase().localeCompare((b.last + b.first).toLowerCase());
+  });
+  list.innerHTML = sorted.map(function(p){
+    return '<div class="register-row">' +
+      '<div class="register-info">' +
+        '<div class="rname">' + p.last + ', ' + p.first + '</div>' +
+        '<div class="rsub">Age ' + p.age + (p.year ? ' · ' + p.year : '') + ' · ' + p.guardian + ' · ' + p.contact + '</div>' +
+      '</div>' +
+      '<div class="register-actions">' +
+        '<button class="btn btn-outline btn-sm" onclick="openEditModal(\'' + p.id + '\')">Edit</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deletePerson(\'' + p.id + '\')">✕</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ─── TOGGLE PRESENT ───────────────────────────────────────────────────────────
+function togglePresent(id) {
+  var idx = today.indexOf(id);
+  if (idx === -1) {
+    today.push(id);
+    var p = register.find(function(x){ return x.id === id; });
+    showToast(p ? p.first + ' ' + p.last + ' signed in ✓' : 'Signed in ✓');
+  } else {
+    today.splice(idx, 1);
+    var p = register.find(function(x){ return x.id === id; });
+    showToast(p ? p.first + ' signed out' : 'Signed out');
+  }
+  saveLocal();
+  renderSignIn();
+}
+
+// ─── COUNTS / HEADER ──────────────────────────────────────────────────────────
+function updateCounts() {
+  document.getElementById('count-present').textContent = today.length;
+  document.getElementById('count-total').textContent   = register.length;
+}
+function updateHeader() {
+  document.getElementById('header-count').textContent = today.length + ' present';
+}
+
+// ─── MODAL: ADD / EDIT ────────────────────────────────────────────────────────
+function openAddModal() {
+  editId = null;
+  document.getElementById('modal-title').textContent = 'Add New Person';
+  document.getElementById('m-first').value    = '';
+  document.getElementById('m-last').value     = '';
+  document.getElementById('m-age').value      = '';
+  document.getElementById('m-year').value     = '';
+  document.getElementById('m-guardian').value = '';
+  document.getElementById('m-contact').value  = '';
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('m-first').focus(); }, 100);
+}
+function openEditModal(id) {
+  editId = id;
+  var p = register.find(function(x){ return x.id === id; });
+  if (!p) return;
+  document.getElementById('modal-title').textContent = 'Edit ' + p.first + ' ' + p.last;
+  document.getElementById('m-first').value    = p.first;
+  document.getElementById('m-last').value     = p.last;
+  document.getElementById('m-age').value      = p.age;
+  document.getElementById('m-year').value     = p.year || '';
+  document.getElementById('m-guardian').value = p.guardian;
+  document.getElementById('m-contact').value  = p.contact;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+function closeModalOnOverlay(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+function saveModal() {
+  var first    = document.getElementById('m-first').value.trim();
+  var last     = document.getElementById('m-last').value.trim();
+  var age      = document.getElementById('m-age').value;
+  var year     = document.getElementById('m-year').value;
+  var guardian = document.getElementById('m-guardian').value.trim();
+  var contact  = document.getElementById('m-contact').value.trim();
+
+  if (!first || !last || !age || !guardian || !contact) {
+    showToast('Please fill in all required fields'); return;
+  }
+  if (editId) {
+    var p = register.find(function(x){ return x.id === editId; });
+    if (p) { p.first = first; p.last = last; p.age = age; p.year = year; p.guardian = guardian; p.contact = contact; }
+    showToast('Updated ✓');
+  } else {
+    register.push({ id: 'p' + Date.now(), first: first, last: last, age: age, year: year, guardian: guardian, contact: contact });
+    showToast(first + ' ' + last + ' added ✓');
+  }
+  saveLocal();
+  closeModal();
+  renderSignIn();
+  renderRegister();
+}
+
+// ─── DELETE ───────────────────────────────────────────────────────────────────
+function deletePerson(id) {
+  var p = register.find(function(x){ return x.id === id; });
+  openConfirm(
+    'Remove ' + (p ? p.first + ' ' + p.last : 'this person') + '?',
+    'This will remove them from the register and cannot be undone.',
+    function() {
+      register = register.filter(function(x){ return x.id !== id; });
+      today    = today.filter(function(x){ return x !== id; });
+      saveLocal();
+      renderSignIn();
+      renderRegister();
+      showToast('Removed');
+    }
+  );
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+function saveSheetUrl() {
+  var url = document.getElementById('sheets-url').value.trim();
+  localStorage.setItem('101st_sheets_url', url);
+  var status = document.getElementById('url-status');
+  if (url) { status.textContent = '✓ URL saved'; status.className = 'settings-status ok'; }
+  else      { status.textContent = 'URL cleared'; status.className = 'settings-status'; }
+  setTimeout(function(){ status.textContent = ''; }, 3000);
+}
+
+// ─── NEW WEEK / SYNC ─────────────────────────────────────────────────────────
+function confirmNewWeek() {
+  var presentCount = today.length;
+  openConfirm(
+    'Sync & Start New Week?',
+    'This will send attendance for ' + register.length + ' registered (' + presentCount + ' present) to Google Sheets, then clear today\'s sign-ins.',
+    doNewWeek
+  );
+}
+function doNewWeek() {
+  // Sign out anyone still present
+  today = [];
+  saveLocal();
+
+  var url = localStorage.getItem('101st_sheets_url') || '';
+  if (!url) { showToast('No Google Sheets URL saved — list cleared locally.'); renderSignIn(); updateHeader(); return; }
+
+  var dateStr = formatDate(new Date());
+  var payload = {
+    action: 'sync',
+    date: dateStr,
+    group: '101st',
+    people: register.map(function(p){
+      return {
+        id: p.id, first: p.first, last: p.last, age: p.age,
+        year: p.year || '', guardian: p.guardian, contact: p.contact,
+        present: today.includes(p.id) ? 'Yes' : 'No'  // today already cleared, so all No — use saved list
+      };
+    })
+  };
+
+  // Re-build with saved today list (captured before clearing)
+  showToast('Syncing…');
+  var encoded = encodeURIComponent(JSON.stringify(payload));
+  fetch(url + '?data=' + encoded, { method: 'GET', mode: 'no-cors' })
+    .then(function(){ showToast('Synced! ✓ New week ready.'); renderSignIn(); updateHeader(); })
+    .catch(function(){ showToast('Sync failed — check URL in Settings.'); renderSignIn(); updateHeader(); });
+}
+
+// ─── LOAD FROM SHEETS ─────────────────────────────────────────────────────────
+function loadFromSheets() {
+  var url = localStorage.getItem('101st_sheets_url') || '';
+  if (!url) { showToast('No Google Sheets URL saved.'); return; }
+  var status = document.getElementById('load-status');
+  status.textContent = 'Loading…'; status.className = 'settings-status';
+
+  var payload = { action: 'getRegister', group: '101st' };
+  var encoded = encodeURIComponent(JSON.stringify(payload));
+  fetch(url + '?data=' + encoded)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.register && Array.isArray(data.register)) {
+        register = data.register;
+        saveLocal();
+        renderSignIn();
+        renderRegister();
+        status.textContent = '✓ Loaded ' + register.length + ' people';
+        status.className = 'settings-status ok';
+      } else {
+        status.textContent = 'Unexpected response from Sheets';
+        status.className = 'settings-status err';
+      }
+    })
+    .catch(function(){
+      status.textContent = 'Failed to load — check URL';
+      status.className = 'settings-status err';
+    });
+}
+
+// ─── CLEAR ALL ───────────────────────────────────────────────────────────────
+function confirmClearAll() {
+  openConfirm('Clear ALL data?', 'This will wipe the entire register and today\'s sign-ins. This cannot be undone.', function(){
+    register = []; today = [];
+    localStorage.removeItem('101st_register');
+    localStorage.removeItem('101st_today');
+    renderSignIn(); renderRegister();
+    showToast('All data cleared');
+  });
+}
+
+// ─── PRINT LABELS ─────────────────────────────────────────────────────────────
+function printLabels() {
+  var presentPeople = register.filter(function(p){ return today.includes(p.id); });
+  if (presentPeople.length === 0) { showToast('No one is signed in yet.'); return; }
+  var area = document.getElementById('print-area');
+  area.innerHTML = presentPeople.map(function(p){
+    return '<div class="label-item">' +
+      '<div class="ln">' + p.first + ' ' + p.last + '</div>' +
+      '<div class="ls">Age ' + p.age + (p.year ? ' · ' + p.year : '') + '</div>' +
+      '<div class="lc">Guardian: ' + p.guardian + '</div>' +
+    '</div>';
+  }).join('');
+  window.print();
+}
+
+// ─── CONFIRM DIALOG ───────────────────────────────────────────────────────────
+var confirmCallback = null;
+function openConfirm(title, msg, cb) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent   = msg;
+  confirmCallback = cb;
+  var overlay = document.getElementById('confirm-overlay');
+  overlay.style.display = 'flex';
+}
+function closeConfirm() {
+  document.getElementById('confirm-overlay').style.display = 'none';
+  confirmCallback = null;
+}
+function closeConfirmOnOverlay(e) {
+  if (e.target === document.getElementById('confirm-overlay')) closeConfirm();
+}
+document.getElementById('confirm-yes').addEventListener('click', function(){
+  if (confirmCallback) confirmCallback();
+  closeConfirm();
+});
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+var toastTimer = null;
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+}
+
+// ─── DATE UTILS ───────────────────────────────────────────────────────────────
+function formatDate(d) {
+  var dd = String(d.getDate()).padStart(2,'0');
+  var mm = String(d.getMonth()+1).padStart(2,'0');
+  var yy = d.getFullYear();
+  return dd + '/' + mm + '/' + yy;
+}
+</script>
+</body>
+</html>
