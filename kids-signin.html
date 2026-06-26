@@ -159,12 +159,22 @@ header{background:#5C3D4E;color:#FFFFFF;padding:14px 20px;flex-shrink:0;}
 
 /* PRINT */
 @media print{
+  @page{size:62mm 29mm;margin:0;}
   body > *:not(#labelPrintArea){display:none !important;}
-  #labelPrintArea{display:grid !important;grid-template-columns:repeat(3,1fr);gap:6mm;padding:10mm;}
-  .print-label{border:1px solid #999;border-radius:4mm;padding:5mm 6mm;text-align:center;page-break-inside:avoid;}
-  .pl-name{font-size:22pt;font-weight:800;margin-bottom:2mm;}
-  .pl-detail{font-size:9pt;color:#555;}
-  .pl-church{font-size:8pt;color:#888;margin-top:2mm;font-style:italic;}
+  #labelPrintArea{display:block !important;padding:0;margin:0;}
+  .print-label{
+    width:62mm;height:29mm;
+    border:0.5px solid #ccc;
+    border-radius:2mm;
+    padding:3mm 4mm;
+    text-align:center;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    page-break-after:always;
+    overflow:hidden;
+  }
+  .pl-name{font-size:16pt;font-weight:800;margin-bottom:1mm;line-height:1.1;}
+  .pl-detail{font-size:8pt;color:#555;line-height:1.2;}
+  .pl-church{font-size:7pt;color:#888;margin-top:1mm;}
 }
 #labelPrintArea{display:none;}
 </style>
@@ -352,9 +362,16 @@ function getUrl() { return localStorage.getItem(SHEETS_URL_KEY) || ''; }
 
 function calcAge(dob) {
   if (!dob) return '';
-  var today = new Date();
-  var b = new Date(dob);
+  var b;
+  // Handle DD/MM/YYYY format (from Google Sheets display)
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dob)) {
+    var parts = dob.split('/');
+    b = new Date(parts[2], parts[1]-1, parts[0]);
+  } else {
+    b = new Date(dob);
+  }
   if (isNaN(b.getTime())) return '';
+  var today = new Date();
   var age = today.getFullYear() - b.getFullYear();
   var m = today.getMonth() - b.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < b.getDate())) age--;
@@ -592,9 +609,11 @@ function doQuickSignIn(regId) {
   var age = child.dob ? calcAge(child.dob) : (child.age || '');
   api({action:'signIn', registryId:regId, name:child.name, dob:child.dob||'', age:age, guardian:child.guardian, contact:child.contact, medical:child.medical||''}, function(err, res){
     if (err || !res.success) { showToast('Error: ' + (err || res.message)); return; }
-    signedIn.push({registryId:regId, name:child.name, dob:child.dob||'', age:age, guardian:child.guardian, contact:child.contact, medical:child.medical||'', timeIn:res.timeIn, timeOut:'', status:'in'});
+    var entry = {registryId:regId, name:child.name, dob:child.dob||'', age:age, guardian:child.guardian, contact:child.contact, medical:child.medical||'', timeIn:res.timeIn, timeOut:'', status:'in'};
+    signedIn.push(entry);
     showToast(child.name + ' signed in!');
     renderQuick();
+    autoPrintLabel(entry);
   });
 }
 
@@ -644,9 +663,11 @@ function signInNewChild() {
     }
     api({action:'signIn', registryId:regId, name:name, dob:dob, age:age, guardian:guardian, contact:contact}, function(err2, res2){
       if (err2 || !res2.success) { showToast('Saved but could not sign in: ' + (err2 || res2.message)); return; }
-      signedIn.push({registryId:regId, name:name, dob:dob, age:age, guardian:guardian, contact:contact, medical:medical, timeIn:res2.timeIn, timeOut:'', status:'in'});
-        showToast(name + ' signed in!');
+      var entry = {registryId:regId, name:name, dob:dob, age:age, guardian:guardian, contact:contact, medical:medical, timeIn:res2.timeIn, timeOut:'', status:'in'};
+      signedIn.push(entry);
+      showToast(name + ' signed in!');
       renderQuick(); updateHeader();
+      autoPrintLabel(entry);
     });
   });
 }
@@ -778,6 +799,18 @@ function setUrlStatus(msg, colour) {
   var el = document.getElementById('urlStatus');
   if (!el) return;
   el.textContent = msg; el.style.color = colour || 'var(--muted)';
+}
+
+/* AUTO PRINT LABEL ON SIGN-IN */
+function autoPrintLabel(entry) {
+  var age = entry.dob ? calcAge(entry.dob) : (entry.age || '');
+  document.getElementById('labelPrintArea').innerHTML =
+    '<div class="print-label">'
+    + '<div class="pl-name">' + esc(entry.name) + '</div>'
+    + '<div class="pl-detail">' + (age ? 'Age ' + age + ' - ' : '') + esc(entry.guardian) + '</div>'
+    + '<div class="pl-church">The Fields Church - Kids Church</div>'
+    + '</div>';
+  setTimeout(function(){ window.print(); }, 300);
 }
 
 /* LABELS */
