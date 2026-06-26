@@ -363,21 +363,24 @@ function getUrl() { return localStorage.getItem(SHEETS_URL_KEY) || ''; }
 function calcAge(dob) {
   if (!dob) return '';
   var b;
-  // Handle DD/MM/YYYY format
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dob)) {
-    var p = dob.split('/');
-    b = new Date(p[2], p[1]-1, p[0]);
+  var months = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
   // Handle DD-Mon-YYYY format e.g. 29-Feb-2024
-  } else if (/^\d{1,2}-[A-Za-z]{3}-\d{4}$/.test(dob)) {
-    b = new Date(dob.replace(/-/g, ' '));
+  if (/^\d{1,2}-[A-Za-z]{3}-\d{4}$/.test(dob)) {
+    var p = dob.split('-');
+    var mo = months[p[1].toLowerCase()];
+    b = (mo !== undefined) ? new Date(parseInt(p[2]), mo, parseInt(p[0])) : null;
+  // Handle DD/MM/YYYY format
+  } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(dob)) {
+    var p2 = dob.split('/');
+    b = new Date(parseInt(p2[2]), parseInt(p2[1])-1, parseInt(p2[0]));
   // Handle YYYY-MM-DD format from iOS date picker
   } else if (/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
-    var p2 = dob.split('-');
-    b = new Date(p2[0], p2[1]-1, p2[2]);
+    var p3 = dob.split('-');
+    b = new Date(parseInt(p3[0]), parseInt(p3[1])-1, parseInt(p3[2]));
   } else {
     b = new Date(dob);
   }
-  if (isNaN(b.getTime())) return '';
+  if (!b || isNaN(b.getTime())) return '';
   var today = new Date();
   var age = today.getFullYear() - b.getFullYear();
   var m = today.getMonth() - b.getMonth();
@@ -690,9 +693,10 @@ function renderRegister() {
   var sorted = registry.slice().sort(function(a,b){ return surname(a.name).localeCompare(surname(b.name)); });
   list.innerHTML = sorted.map(function(c){
     var age = c.dob ? calcAge(c.dob) : (c.age || '');
+    var dobDisplay = c.dob ? ' (DOB: ' + esc(c.dob) + ')' : '';
     return '<div class="reg-item">'
       + '<div><div class="ri-name">' + esc(c.name) + '</div>'
-      + '<div class="ri-detail">' + (age ? 'Age ' + age : '') + (age ? ' - ' : '') + esc(c.guardian) + (c.contact ? ' - ' + esc(c.contact) : '') + '</div>'
+      + '<div class="ri-detail">' + (age ? 'Age ' + age + dobDisplay : '') + (age ? ' - ' : '') + esc(c.guardian) + (c.contact ? ' - ' + esc(c.contact) : '') + '</div>'
       + (c.medical ? '<div class="medical-badge" style="margin-top:5px;">&#9888; ' + esc(c.medical) + '</div>' : '') + '</div>'
       + '<div class="reg-actions">'
         + '<button class="btn-edit" onclick="openEdit(\'' + c.id + '\')">Edit</button>'
