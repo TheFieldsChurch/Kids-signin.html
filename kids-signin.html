@@ -816,64 +816,64 @@ function setUrlStatus(msg, colour) {
 }
 
 /* LABEL PRINT
-   Uses a hidden iframe within the same page so parents never navigate away.
-   Each label is an SVG. Safari on iPad ignores @page size but respects
-   the paper loaded in the printer - select DK-11209 once in the print dialog.
-   Headers/footers: in the print dialog tap the paper size area to reveal
-   options, or go to the share sheet > Print > swipe up on preview to see options. */
-
+   Opens a minimal popup containing only the label SVG.
+   Chrome on iOS handles this correctly unlike Safari.
+   The popup auto-prints and auto-closes. */
 function makeLabelSvg(c) {
   var age = c.dob ? calcAge(c.dob) : (c.age || '');
   var detail = (age ? 'Age ' + age + ' – ' : '') + esc(c.guardian);
-  /* viewBox 620x290 = 62mm x 29mm at 10px/mm — landscape label */
   return '<svg xmlns="http://www.w3.org/2000/svg"'
     + ' viewBox="0 0 620 290"'
-    + ' width="620" height="290"'
-    + ' style="display:block;width:100%;height:auto;">'
+    + ' style="display:block;width:100%;height:100%;">'
     + '<rect width="620" height="290" fill="white"/>'
-    + '<text x="310" y="120" text-anchor="middle" dominant-baseline="middle"'
-    + ' font-family="-apple-system,BlinkMacSystemFont,Helvetica,sans-serif"'
-    + ' font-size="90" font-weight="800" fill="#1a1a1a">' + esc(c.name) + '</text>'
+    + '<text x="310" y="115" text-anchor="middle" dominant-baseline="middle"'
+    + ' font-family="Helvetica,Arial,sans-serif"'
+    + ' font-size="96" font-weight="800" fill="#1a1a1a">' + esc(c.name) + '</text>'
     + '<text x="310" y="200" text-anchor="middle" dominant-baseline="middle"'
-    + ' font-family="-apple-system,BlinkMacSystemFont,Helvetica,sans-serif"'
-    + ' font-size="42" fill="#444444">' + detail + '</text>'
+    + ' font-family="Helvetica,Arial,sans-serif"'
+    + ' font-size="44" fill="#444444">' + detail + '</text>'
     + '<text x="310" y="258" text-anchor="middle" dominant-baseline="middle"'
-    + ' font-family="-apple-system,BlinkMacSystemFont,Helvetica,sans-serif"'
-    + ' font-size="32" fill="#888888">The Fields Church – Kids Church</text>'
+    + ' font-family="Helvetica,Arial,sans-serif"'
+    + ' font-size="30" fill="#888888">The Fields Church – Kids Church</text>'
     + '</svg>';
 }
 
 function buildLabelHtml(list) {
-  var svgs = list.map(function(c){
-    return '<div style="page-break-after:always;break-after:page;margin:0;padding:0;">'
-      + makeLabelSvg(c)
-      + '</div>';
+  var pages = list.map(function(c, i){
+    var isLast = (i === list.length - 1);
+    return '<div style="'
+      + 'width:62mm;height:29mm;'
+      + 'overflow:hidden;'
+      + 'display:flex;align-items:center;justify-content:center;'
+      + (!isLast ? 'page-break-after:always;break-after:page;' : '')
+      + '">' + makeLabelSvg(c) + '</div>';
   }).join('');
   return '<!DOCTYPE html><html><head>'
     + '<meta charset="UTF-8">'
     + '<style>'
     + '*{margin:0;padding:0;box-sizing:border-box;}'
-    + '@page{margin:0;size:62mm 29mm landscape;}'
-    + 'html,body{margin:0;padding:0;background:#fff;}'
-    + '</style>'
-    + '</head><body>' + svgs + '</body></html>';
+    + '@page{size:62mm 29mm landscape;margin:0;}'
+    + 'html,body{width:62mm;height:29mm;margin:0;padding:0;background:#fff;overflow:hidden;}'
+    + '@media print{'
+    + '@page{size:62mm 29mm landscape;margin:0;}'
+    + 'html,body{width:62mm;height:29mm;margin:0;padding:0;overflow:hidden;}'
+    + '}'
+    + '</style></head><body>'
+    + pages
+    + '<script>'
+    + 'window.onload=function(){'
+    + '  setTimeout(function(){window.print();},300);'
+    + '};<\/script>'
+    + '</body></html>';
 }
 
 function openPrintWindow(list) {
-  var frame = document.getElementById('printFrame');
-  if (!frame) {
-    frame = document.createElement('iframe');
-    frame.id = 'printFrame';
-    frame.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
-    document.body.appendChild(frame);
-  }
+  var w = window.open('', '_blank', 'width=240,height=120');
+  if (!w) { alert('Please allow pop-ups for this page, then try again.'); return; }
   var html = buildLabelHtml(list);
-  var doc = frame.contentDocument || frame.contentWindow.document;
-  doc.open(); doc.write(html); doc.close();
-  setTimeout(function(){
-    frame.contentWindow.focus();
-    frame.contentWindow.print();
-  }, 400);
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
 }
 
 /* AUTO PRINT LABEL ON SIGN-IN */
