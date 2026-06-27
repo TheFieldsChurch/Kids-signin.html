@@ -833,16 +833,47 @@ function setUrlStatus(msg, colour) {
   el.textContent = msg; el.style.color = colour || 'var(--muted)';
 }
 
+/* LABEL PRINT — opens a minimal popup so iPad/Safari AirPrint only sees the label */
+function buildLabelHtml(list) {
+  var labels = list.map(function(c){
+    var age = c.dob ? calcAge(c.dob) : (c.age || '');
+    return '<div class="print-label">'
+      + '<div class="pl-name">' + esc(c.name) + '</div>'
+      + '<div class="pl-detail">' + (age ? 'Age ' + age + ' \u2013 ' : '') + esc(c.guardian) + '</div>'
+      + '<div class="pl-church">The Fields Church \u2013 Kids Church</div>'
+      + '</div>';
+  }).join('');
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    + '<style>'
+    + '*{box-sizing:border-box;margin:0;padding:0;}'
+    + '@page{size:62mm 29mm;margin:0;}'
+    + 'body{background:#fff;}'
+    + '.print-label{'
+    + 'width:62mm;height:29mm;'
+    + 'padding:3mm 4mm;'
+    + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
+    + 'text-align:center;page-break-after:always;overflow:hidden;}'
+    + '.pl-name{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:16pt;font-weight:800;margin-bottom:1mm;line-height:1.1;}'
+    + '.pl-detail{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:8pt;color:#555;line-height:1.2;}'
+    + '.pl-church{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:7pt;color:#888;margin-top:1mm;}'
+    + '</style></head><body>'
+    + labels
+    + '<script>window.onload=function(){window.print();};<\/script>'
+    + '</body></html>';
+}
+
+function openPrintWindow(list) {
+  var html = buildLabelHtml(list);
+  var w = window.open('', '_blank', 'width=300,height=200');
+  if (!w) { alert('Please allow pop-ups for this page to print labels, then try again.'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
 /* AUTO PRINT LABEL ON SIGN-IN */
 function autoPrintLabel(entry) {
-  var age = entry.dob ? calcAge(entry.dob) : (entry.age || '');
-  document.getElementById('labelPrintArea').innerHTML =
-    '<div class="print-label">'
-    + '<div class="pl-name">' + esc(entry.name) + '</div>'
-    + '<div class="pl-detail">' + (age ? 'Age ' + age + ' - ' : '') + esc(entry.guardian) + '</div>'
-    + '<div class="pl-church">The Fields Church - Kids Church</div>'
-    + '</div>';
-  setTimeout(function(){ window.print(); }, 300);
+  openPrintWindow([entry]);
 }
 
 /* LABELS */
@@ -867,15 +898,17 @@ function printLabels() {
     var el = document.getElementById('lp-' + i); return el && el.classList.contains('selected');
   });
   if (!selected.length){ alert('Please select at least one label.'); return; }
-  buildPrintArea(selected); closeLabelModal(); setTimeout(function(){ window.print(); }, 200);
+  closeLabelModal();
+  openPrintWindow(selected);
 }
 function printOneLabel(regId) {
   var entry = null;
   for (var i = 0; i < signedIn.length; i++){ if (signedIn[i].registryId === regId){ entry = signedIn[i]; break; } }
   if (!entry){ alert('Child not found.'); return; }
-  buildPrintArea([entry]); setTimeout(function(){ window.print(); }, 100);
+  openPrintWindow([entry]);
 }
 function buildPrintArea(list) {
+  /* kept for compatibility — no longer used for printing */
   document.getElementById('labelPrintArea').innerHTML = list.map(function(c){
     var age = c.dob ? calcAge(c.dob) : (c.age || '');
     return '<div class="print-label">'
