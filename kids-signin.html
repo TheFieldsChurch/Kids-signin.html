@@ -833,7 +833,7 @@ function setUrlStatus(msg, colour) {
   el.textContent = msg; el.style.color = colour || 'var(--muted)';
 }
 
-/* LABEL PRINT — opens a minimal popup so iPad/Safari AirPrint only sees the label */
+/* LABEL PRINT — opens a minimal popup sized to exactly one label per page for Safari/AirPrint */
 function buildLabelHtml(list) {
   var labels = list.map(function(c){
     var age = c.dob ? calcAge(c.dob) : (c.age || '');
@@ -846,16 +846,21 @@ function buildLabelHtml(list) {
   return '<!DOCTYPE html><html><head><meta charset="UTF-8">'
     + '<style>'
     + '*{box-sizing:border-box;margin:0;padding:0;}'
-    + '@page{size:62mm 29mm;margin:0;}'
-    + 'body{background:#fff;}'
+    + '@page{size:62mm 29mm landscape;margin:0;}'
+    + 'html,body{width:62mm;height:29mm;overflow:hidden;background:#fff;}'
     + '.print-label{'
     + 'width:62mm;height:29mm;'
     + 'padding:3mm 4mm;'
     + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
-    + 'text-align:center;page-break-after:always;overflow:hidden;}'
+    + 'text-align:center;overflow:hidden;}'
     + '.pl-name{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:16pt;font-weight:800;margin-bottom:1mm;line-height:1.1;}'
     + '.pl-detail{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:8pt;color:#555;line-height:1.2;}'
     + '.pl-church{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:7pt;color:#888;margin-top:1mm;}'
+    + '@media print{'
+    + '@page{size:62mm 29mm landscape;margin:0;}'
+    + 'html,body{width:62mm;height:29mm;overflow:hidden;}'
+    + '.print-label{width:62mm;height:29mm;page-break-after:always;page-break-inside:avoid;}'
+    + '}'
     + '</style></head><body>'
     + labels
     + '<script>window.onload=function(){window.print();};<\/script>'
